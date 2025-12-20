@@ -15,7 +15,7 @@ def evaluate(model, X, y):
     preds = model.predict(X)
     return {
         "mae": mean_absolute_error(y, preds),
-        "rmse": mean_squared_error(y, preds, squared=False),
+        "rmse": mean_squared_error(y, preds) ** 0.5,
         "r2": r2_score(y, preds)
     }
 
