@@ -37,7 +37,7 @@ models/
 *.model
 
 # ────────────── Data files (raw and processed) ──────────────
-src/mlproject/data/
+src/ml_project/data/
 *.csv
 *.parquet
 *.zip
