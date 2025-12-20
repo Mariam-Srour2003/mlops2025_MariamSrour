@@ -14,8 +14,6 @@ env/
 .uv/
 .conda/
 
-# ────────────── Jupyter / notebooks ──────────────
-.ipynb_checkpoints/
 
 # ────────────── OS-specific ──────────────
 .DS_Store
