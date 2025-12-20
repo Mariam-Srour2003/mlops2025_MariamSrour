@@ -25,6 +25,7 @@ def drop_missing_locations(df):
     ])
 
 def fill_missing_passenger_count(df):
+    df = df.copy()
     if 'passenger_count' in df.columns:
         df['passenger_count'] = df['passenger_count'].fillna(1)
     return df
@@ -56,6 +57,7 @@ def parse_datetime(df):
     return df
 
 def extract_time_features(df):
+    df = df.copy()
     df['pickup_hour'] = df['pickup_datetime'].dt.hour
     df['pickup_day'] = df['pickup_datetime'].dt.day
     df['pickup_weekday'] = df['pickup_datetime'].dt.weekday
