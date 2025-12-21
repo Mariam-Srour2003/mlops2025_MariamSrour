@@ -88,5 +88,3 @@ def feature_engineering(df, fit=False, save=False, is_train=True):
         df.to_csv("processed_features.csv", index=False)
 
     return X, y, list(X.columns)
-
-print("Feature engineering pipeline ready ✔")
