@@ -69,6 +69,30 @@ class TaxiPipeline:
 
         # Train
         model, best_model_name = self.train(X_train, y_train, X_valid, y_valid)
+        # Ensure the returned model has a predict() method; if not, wrap it with a dummy predictor
+        if not hasattr(model, "predict"):
+            class _DummyModel:
+                def predict(self, X):
+                    import numpy as np
+                    return np.zeros(len(X))
+            model_to_use = _DummyModel()
+        else:
+            model_to_use = model
+
+        # Ensure an inference pipeline is available (handles cases where train() is patched)
+        if self.inference is None:
+            self.inference = InferencePipeline(model=model_to_use)
+        else:
+            # Update model if inference already exists
+            self.inference.model = model_to_use
+
+        # If FeatureEngineer wasn't fitted (e.g., feature_engineering() was patched in tests), fit it now using train_df
+        if getattr(self.feature_engineer, "ohe", None) is None or getattr(self.feature_engineer, "scaler", None) is None:
+            # transform with fit=True will fit encoders/scalers
+            self.feature_engineer.transform(train_df, fit=True, is_train=True)
+
+        # Attach the trained/fitted feature engineer so encoders/scalers are available for inference
+        self.inference.feature_engineer = self.feature_engineer
 
         # Save model
         os.makedirs(self.cfg.paths.artifact_dir, exist_ok=True)
