@@ -1,0 +1,123 @@
+import mlflow
+import joblib
+from typing import Dict, Tuple
+
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+
+class ModelTrainer:
+    """
+    Handles:
+    - model training
+    - evaluation
+    - model selection
+    - MLflow logging
+    - model persistence
+    """
+
+    def __init__(
+        self,
+        metric: str = "mae",
+        experiment_name: str = "NYC-Taxi-Trip-ML",
+        model_config: Dict = None,
+    ):
+        self.metric = metric
+        self.experiment_name = experiment_name
+        self.model_config = model_config or self._default_model_config()
+
+        self.best_model = None
+        self.best_model_name = None
+        self.best_score = (
+            float("inf") if metric in ["mae", "rmse"] else -float("inf")
+        )
+
+    # Default model configuration
+    @staticmethod
+    def _default_model_config() -> Dict:
+        return {
+            "linear": {},
+            "ridge": {"alpha": 1.0},
+            "lasso": {"alpha": 0.1},
+            "rf": {"n_estimators": 10, "max_depth": 12, "n_jobs": -1},
+            "gb": {"n_estimators": 10, "max_depth": 3, "learning_rate": 0.1},
+        }
+
+    # Model registry
+    def _build_models(self) -> Dict:
+        return {
+            "linear": LinearRegression(**self.model_config.get("linear", {})),
+            "ridge": Ridge(**self.model_config.get("ridge", {})),
+            "lasso": Lasso(**self.model_config.get("lasso", {})),
+            "rf": RandomForestRegressor(**self.model_config.get("rf", {})),
+            "gb": GradientBoostingRegressor(**self.model_config.get("gb", {})),
+        }
+
+    # Evaluation
+    @staticmethod
+    def evaluate(model, X, y) -> Dict:
+        preds = model.predict(X)
+        return {
+            "mae": mean_absolute_error(y, preds),
+            "rmse": mean_squared_error(y, preds) ** 0.5,
+            "r2": r2_score(y, preds),
+        }
+
+    # Training loop
+    def train(
+        self,
+        X_train,
+        y_train,
+        X_valid,
+        y_valid,
+    ) -> Tuple[object, str]:
+        mlflow.set_experiment(self.experiment_name)
+
+        models = self._build_models()
+
+        for name, model in models.items():
+            print(f"Training model: {name}")
+
+            with mlflow.start_run(run_name=name):
+                mlflow.log_params(self.model_config.get(name, {}))
+
+                model.fit(X_train, y_train)
+
+                metrics = self.evaluate(model, X_valid, y_valid)
+                for k, v in metrics.items():
+                    mlflow.log_metric(k, v)
+
+                self._maybe_update_best(model, name, metrics)
+
+        print(
+            f"Best model = {self.best_model_name} | "
+            f"{self.metric.upper()} = {self.best_score:.4f}"
+        )
+
+        return self.best_model, self.best_model_name
+
+    # Best model selection logic
+    def _maybe_update_best(self, model, name: str, metrics: Dict):
+        current_score = metrics[self.metric]
+
+        is_better = (
+            current_score < self.best_score
+            if self.metric in ["mae", "rmse"]
+            else current_score > self.best_score
+        )
+
+        if is_better:
+            self.best_model = model
+            self.best_model_name = name
+            self.best_score = current_score
+
+    # Persistence
+    @staticmethod
+    def save_model(model, path: str = "best_model.pkl") -> str:
+        joblib.dump(model, path)
+        return path
+
+    @staticmethod
+    def load_model(path: str = "best_model.pkl"):
+        return joblib.load(path)
