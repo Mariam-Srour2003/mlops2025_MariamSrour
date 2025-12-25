@@ -1,7 +1,8 @@
 import mlflow
 import joblib
 from typing import Dict, Tuple
-
+import mlflow.sklearn
+from mlflow.models import infer_signature
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -40,8 +41,8 @@ class ModelTrainer:
             "linear": {},
             "ridge": {"alpha": 1.0},
             "lasso": {"alpha": 0.1},
-            "rf": {"n_estimators": 10, "max_depth": 12, "n_jobs": -1},
-            "gb": {"n_estimators": 10, "max_depth": 3, "learning_rate": 0.1},
+            "rf": {"n_estimators": 200, "max_depth": 12, "n_jobs": -1},
+            "gb": {"n_estimators": 200, "max_depth": 3, "learning_rate": 0.1},
         }
 
     # Model registry
@@ -65,37 +66,53 @@ class ModelTrainer:
         }
 
     # Training loop
-    def train(
-        self,
-        X_train,
-        y_train,
-        X_valid,
-        y_valid,
-    ) -> Tuple[object, str]:
+    def train(self, X_train, y_train, X_valid, y_valid) -> Tuple[object, str]:
         mlflow.set_experiment(self.experiment_name)
-
+        
+        # Infer signature for model logging
+        signature = infer_signature(X_train, self._build_models()["linear"].fit(X_train, y_train).predict(X_valid))
+        
         models = self._build_models()
+        best_run_id = None
 
         for name, model in models.items():
             print(f"Training model: {name}")
 
             with mlflow.start_run(run_name=name):
                 mlflow.log_params(self.model_config.get(name, {}))
-
+                
                 model.fit(X_train, y_train)
-
+                
+                # Log model to MLflow with signature
+                mlflow.sklearn.log_model(
+                    sk_model=model,
+                    artifact_path="model",
+                    signature=signature,
+                    input_example=X_valid.iloc[:5]  # Small input example
+                )
+                
                 metrics = self.evaluate(model, X_valid, y_valid)
                 for k, v in metrics.items():
                     mlflow.log_metric(k, v)
-
+                
                 self._maybe_update_best(model, name, metrics)
+                best_run_id = mlflow.active_run().info.run_id  # Track best run
 
-        print(
-            f"Best model = {self.best_model_name} | "
-            f"{self.metric.upper()} = {self.best_score:.4f}"
-        )
+        # Register best model to Model Registry
+        if self.best_model_name:
+            with mlflow.start_run(run_id=best_run_id):
+                model_uri = f"runs:/{best_run_id}/model"
+                registered_name = f"NYC_Taxi_{self.best_model_name}"
+                mlflow.register_model(model_uri, registered_name)
+                print(f"Registered best model '{registered_name}' from run {best_run_id}")
 
+        print(f"Best model = {self.best_model_name} | {self.metric.upper()} = {self.best_score:.4f}")
         return self.best_model, self.best_model_name
+
+    def load_model_by_name(self, model_name: str, stage: str = "None") -> object:
+        """Load model from MLflow Model Registry by name"""
+        model_uri = f"models:/{model_name}/{stage}"
+        return mlflow.sklearn.load_model(model_uri)
 
     # Best model selection logic
     def _maybe_update_best(self, model, name: str, metrics: Dict):
