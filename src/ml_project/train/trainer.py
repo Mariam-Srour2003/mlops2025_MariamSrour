@@ -33,6 +33,8 @@ class ModelTrainer:
         self.best_score = (
             float("inf") if metric in ["mae", "rmse"] else -float("inf")
         )
+        # Track the run id corresponding to the current best model (for registry)
+        self.best_run_id = None
 
     # Default model configuration
     @staticmethod
@@ -73,7 +75,6 @@ class ModelTrainer:
         signature = infer_signature(X_train, self._build_models()["linear"].fit(X_train, y_train).predict(X_valid))
         
         models = self._build_models()
-        best_run_id = None
 
         for name, model in models.items():
             print(f"Training model: {name}")
@@ -83,29 +84,38 @@ class ModelTrainer:
                 
                 model.fit(X_train, y_train)
                 
-                # Log model to MLflow with signature
-                mlflow.sklearn.log_model(
-                    sk_model=model,
-                    artifact_path="model",
-                    signature=signature,
-                    input_example=X_valid.iloc[:5]  # Small input example
-                )
+                # Log model to MLflow with signature (guarded so tests/local file URIs don't raise)
+                try:
+                    mlflow.sklearn.log_model(
+                        sk_model=model,
+                        artifact_path="model",
+                        signature=signature,
+                        input_example=(X_valid.iloc[:5] if hasattr(X_valid, "iloc") else X_valid[:5])  # Small input example
+                    )
+                except Exception as e:
+                    print(f"⚠️ MLflow logging failed for model {name}: {e}")
                 
                 metrics = self.evaluate(model, X_valid, y_valid)
                 for k, v in metrics.items():
                     mlflow.log_metric(k, v)
                 
+                # Update best model; if current model is best, save its run id
+                prev_best = self.best_model_name
                 self._maybe_update_best(model, name, metrics)
-                best_run_id = mlflow.active_run().info.run_id  # Track best run
+                if self.best_model_name == name:
+                    self.best_run_id = mlflow.active_run().info.run_id  # run id for the best model
 
         # Register best model to Model Registry
-        if self.best_model_name:
-            with mlflow.start_run(run_id=best_run_id):
-                model_uri = f"runs:/{best_run_id}/model"
-                registered_name = f"NYC_Taxi_{self.best_model_name}"
+        if self.best_model_name and self.best_run_id:
+            model_uri = f"runs:/{self.best_run_id}/model"
+            registered_name = f"NYC_Taxi_{self.best_model_name}"
+            try:
                 mlflow.register_model(model_uri, registered_name)
-                print(f"Registered best model '{registered_name}' from run {best_run_id}")
-
+                print(f"Registered best model '{registered_name}' from run {self.best_run_id}")
+            except Exception as e:
+                print(f"⚠️ Failed to register best model '{registered_name}': {e}")
+        elif self.best_model_name:
+            print("⚠️ Found a best model but couldn't determine its run id; skipping registry registration.")
         print(f"Best model = {self.best_model_name} | {self.metric.upper()} = {self.best_score:.4f}")
         return self.best_model, self.best_model_name
 
