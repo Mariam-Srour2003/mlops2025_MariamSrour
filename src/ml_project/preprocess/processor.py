@@ -11,18 +11,18 @@ class Preprocessor:
     - duplicate removal
     """
 
-    def __init__(self, is_train: bool = True):
-        self.is_train = is_train
+    def __init__(self):
+        pass
 
     # Validation helpers
-    def validate_required_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+    def validate_required_columns(self, df: pd.DataFrame, is_train: bool = True) -> pd.DataFrame:
         required = [
             'pickup_latitude','pickup_longitude',
             'dropoff_latitude','dropoff_longitude',
             'pickup_datetime'
         ]
 
-        if self.is_train:
+        if is_train:
             required.append("trip_duration")
 
         missing_cols = [c for c in required if c not in df.columns]
@@ -87,13 +87,13 @@ class Preprocessor:
         return df.drop_duplicates()
 
     # Main pipeline
-    def run(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = self.validate_required_columns(df)
+    def run(self, df: pd.DataFrame, is_train: bool = True) -> pd.DataFrame:
+        df = self.validate_required_columns(df, is_train=is_train)
         df = self.drop_missing_locations(df)
         df = self.fill_missing_passenger_count(df)
         df = self.remove_invalid_coordinates(df)
 
-        if self.is_train:
+        if is_train:
             df = self.remove_invalid_trip_durations(df)
             df = self.remove_duration_outliers(df)
 

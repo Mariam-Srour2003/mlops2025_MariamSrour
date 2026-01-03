@@ -91,6 +91,7 @@ class FeatureEngineer:
         df = df.copy()
         df[self.categorical_cols] = df[self.categorical_cols].fillna("Unknown")
 
+        # If fit is True, fit the OneHotEncoder
         if fit:
             self.ohe = OneHotEncoder(
                 handle_unknown="ignore",
@@ -98,20 +99,24 @@ class FeatureEngineer:
             )
             encoded = self.ohe.fit_transform(df[self.categorical_cols])
         else:
+            # If fit is False, check if the encoder has been fitted
             if self.ohe is None:
-                raise RuntimeError("OneHotEncoder not fitted.")
+                raise RuntimeError("OneHotEncoder not fitted. Please fit the encoder first.")
             encoded = self.ohe.transform(df[self.categorical_cols])
 
+        # Create the encoded DataFrame
         encoded_df = pd.DataFrame(
             encoded,
             columns=self.ohe.get_feature_names_out(self.categorical_cols),
             index=df.index
         )
 
+        # Drop the original categorical columns and concatenate the encoded columns
         df = df.drop(columns=self.categorical_cols)
         df = pd.concat([df, encoded_df], axis=1)
 
         return df
+
 
     # Numeric scaling
     def scale_numeric(self, df: pd.DataFrame, fit: bool) -> pd.DataFrame:

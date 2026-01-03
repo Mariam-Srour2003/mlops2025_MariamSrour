@@ -3,7 +3,8 @@ from datetime import datetime
 from pathlib import Path
 import pandas as pd
 from typing import Optional
-from ml_project.features.engineer import FeatureEngineer  # <- class-based
+from ml_project.features.engineer import FeatureEngineer
+from ml_project.train.trainer import ModelTrainer  # <- class-based
 
 class InferencePipeline:
     """
@@ -13,13 +14,27 @@ class InferencePipeline:
     - Optionally saves predictions to CSV
     """
 
-    def __init__(self, model):
+    def __init__(self, model=None, model_name: str = None, stage: str = "None"):
         """
         Args:
-            model: trained ML model (sklearn-like API)
+            model: trained ML model (sklearn-like API) OR
+            model_name: MLflow registered model name to load (e.g., "NYC_Taxi_gb")
+            stage: MLflow stage ("None", "Production", "Staging")
         """
-        self.model = model
-        self.feature_engineer = FeatureEngineer()  # initialize the feature engineer
+        self.feature_engineer = FeatureEngineer()
+        
+        if model_name:
+            # Load from MLflow Model Registry by name
+            import mlflow.sklearn
+            self.model = mlflow.sklearn.load_model(f"models:/{model_name}/{stage}")
+            print(f"✅ Loaded MLflow model: models:/{model_name}/{stage}")
+        elif model is not None:
+            self.model = model
+            print("✅ Using provided model")
+        else:
+            raise ValueError("Must provide either 'model' or 'model_name'")
+
+
 
     def run(
         self,
