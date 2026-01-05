@@ -1,6 +1,5 @@
 # 🚖 mlops2025 
 
-![Project Banner](docs/images/placeholder.svg)
 ![Project Banner](docs/images/header.png)
 
 ---
