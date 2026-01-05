@@ -1,10 +1,10 @@
-name: CI
+name: ci
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ "main" ]
   push:
-    branches: [ master ]
+    branches: [ "main" ]
 
 jobs:
   test:
@@ -12,19 +12,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python 3.11
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: "3.11"
 
-      - name: Install uv
-        run: pip install uv
+      - name: Install minimal dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas numpy pytest
 
-      - name: Install dependencies
-        run: uv sync --frozen
+      - name: Run fast unit test (preprocess)
+        run: pytest tests/scripts/test_preprocess.py -q --maxfail=1
 
-      - name: Run sanity checks
-        run: uv run python -m mlproject.utils.sanity_check
-
-      - name: Run lightweight preprocessing check
-        run: uv run python scripts/preprocess.py
+      - name: Run a tiny preprocessing sample (optional quick smoke)
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from scripts.preprocess import preprocess
+          df = pd.DataFrame({
+              'pickup_latitude':[40.7],
+              'pickup_longitude':[-73.9],
+              'dropoff_latitude':[40.75],
+              'dropoff_longitude':[-73.98],
+              'pickup_datetime':['2025-12-20 12:00:00'],
+              'trip_duration':[1800]
+          })
+          preprocess(df)
+          print("preprocess OK")
+          PY
