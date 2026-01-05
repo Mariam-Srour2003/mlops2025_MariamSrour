@@ -2,21 +2,6 @@
 
 ![Project Banner](docs/images/placeholder.svg)
 ![Project Banner](docs/images/header.png)
----
-
-## 📚Table of contents 
-- [About](#about)
-- [Data](#data)
-- [Features](#features)
-- [Project structure](#project-structure)
-- [Getting started](#getting-started)
-- [Running locally](#running-locally)
-- [Docker](#docker)
-- [SageMaker pipelines](#sagemaker-pipelines)
-- [Scripts & Files](#scripts--files)
-- [Tests](#tests)
-- [Contributing](#contributing)
-- [License](#license)
 
 ---
 
