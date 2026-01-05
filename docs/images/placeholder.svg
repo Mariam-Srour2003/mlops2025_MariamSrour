@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop stop-color="#0ea5a4" offset="0%"/>
+      <stop stop-color="#6366f1" offset="100%"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#g)" />
+  <g font-family="Segoe UI, Roboto, Arial, sans-serif" fill="#fff" text-anchor="middle">
+    <text x="50%" y="50%" dy="-.2em" font-size="42">mlops2025 — NYC Taxi Trip Duration</text>
+    <text x="50%" y="50%" dy="1.2em" font-size="20">Placeholder banner — replace this image with your project graphic</text>
+  </g>
+</svg>

@@ -1,7 +1,148 @@
-# mlops2025_firstname1_firstname2
+# mlops2025_firstname1_firstname2 🚖
 
-## Overview ✅
-This repository implements an end-to-end ML project for the New York City Taxi Trip Duration dataset (Kaggle). The implementation follows the MLOps course requirements: clean src layout, packaging with `uv`, Docker + `docker-compose`, MLflow integration, and SageMaker training & batch inference pipelines.
+![Project Banner](docs/images/placeholder.svg)
+![Project Banner](docs/images/header.png)
+---
+
+## Table of contents 📚
+- [About](#about)
+- [Screenshots](#screenshots)
+- [Data](#data)
+- [Features](#features)
+- [Project structure](#project-structure)
+- [Getting started](#getting-started)
+- [Running locally](#running-locally)
+- [Docker](#docker)
+- [SageMaker pipelines](#sagemaker-pipelines)
+- [Scripts & Files](#scripts--files)
+- [Tests](#tests)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## About ✨
+A complete end-to-end MLOps project for the New York City Taxi Trip Duration dataset. The repo includes preprocessing, feature engineering, model training and evaluation, batch inference, MLflow tracking, and optional SageMaker pipelines for training and batch inference.
+
+---
+
+## Screenshots / Graphics 🖼️
+> Placeholder image above — replace `docs/images/placeholder.svg` with your project graphic or a dashboard screenshot.
+
+---
+
+## Data 📥
+- Dataset: NYC Taxi Trip Duration (Kaggle) — raw dataset is not committed to the repo.
+- Expected locations:
+  - Local runs: Put your CSVs in a `data/raw/` directory or configure `config/config.yaml` to point to your data sources.
+  - SageMaker runs: Data is read from S3 (configure `s3_bucket` and `s3_prefix` in `config/config.yaml`).
+- Preprocessed and intermediate artifacts are saved to `artifacts/` and predictions to `outputs/`.
+
+**Note:** For privacy and CI speed, raw production datasets are not tracked in this repo — use small sample subsets for tests if needed.
+
+---
+
+## Features ✅
+- End-to-end pipeline: preprocess → feature engineering → train → inference
+- Multiple models: Linear, Ridge, Lasso, RandomForest, GradientBoosting (configurable)
+- MLflow experiment tracking (optional local `mlflow` service)
+- Optional SageMaker pipelines for training and batch inference
+- Dockerized environment for reproducible runs
+
+---
+
+## Project structure 📁
+```
+├─ config/                  # yaml configs (config/config.yaml)
+├─ scripts/                 # runnable scripts (train, preprocess, inference, pipeline wrappers)
+├─ src/                     # package: ml_project (core logic, pipelines, models)
+├─ tests/                   # unit & integration tests
+├─ artifacts/               # saved models & intermediate artifacts
+├─ outputs/                 # predictions
+├─ mlruns/                  # MLflow experiment tracking (if used)
+├─ run_training_pipeline.py
+├─ run_batch_inference_pipeline.py
+├─ Dockerfile
+├─ docker-compose.yml
+└─ README.md
+```
+
+---
+
+## Getting started ⚙️
+**Prerequisites**
+- Python 3.9+ (create a venv)
+- `uv` for running tasks (project uses `uv.lock`)
+- Docker (optional, for containerized runs)
+
+**Install dependencies**
+```bash
+python -m venv .venv
+.venv\Scripts\Activate.ps1  # Windows PowerShell
+pip install -U pip
+pip install -r requirements.txt   # or use `uv` tooling if configured
+```
+
+**Configuration**
+- Edit `config/config.yaml` to set paths, model hyperparameters, S3 bucket & role for SageMaker runs, and experiment names.
+
+---
+
+## Running locally ▶️
+**Full pipeline (train + inference)**
+```bash
+# recommended: use project's uv tasks
+uv run train
+# or run the pipeline script directly
+python run.py --config config/config.yaml --run train
+```
+
+**Train only**
+```bash
+python -m scripts.train --config config/config.yaml
+```
+
+**Batch inference (local)**
+```bash
+uv run inference
+# or
+python -m scripts.batch_inference --config config/config.yaml --input data/raw/sample.csv
+```
+
+Output predictions are saved to `outputs/` with timestamped filenames.
+
+---
+
+## Docker 🐳
+Build and start services:
+```bash
+docker-compose build --no-cache
+docker-compose up -d
+```
+Run training or inference inside the container:
+```bash
+docker-compose run --rm app train
+# or
+docker-compose run --rm app inference
+```
+The optional `mlflow` service runs on port `5000` and stores runs under `./mlruns`.
+
+---
+
+## SageMaker pipelines ☁️
+**Quick steps**
+1. Configure AWS credentials (profile or env vars) with access to S3 and SageMaker.
+2. Set `role_arn` in `config/config.yaml` or export `SAGEMAKER_ROLE`.
+3. Run the training pipeline:
+```bash
+python run_training_pipeline.py --config config/config.yaml
+```
+4. Run batch inference (SageMaker Batch Transform):
+```bash
+python run_batch_inference_pipeline.py --config config/config.yaml --input s3://your-bucket/path/to/input.csv
+```
+
+**IAM Role note:** The project uses a `SageMakerExecutionRole` with permissions for SageMaker and S3. See the IAM Role section in this README for details and best practices (least privilege, scoped S3 access, logging/CloudWatch).
 
 ---
 
@@ -106,10 +247,55 @@ python run_batch_inference_pipeline.py
 
 ---
 
+## IAM Role for SageMaker 🔐
+The IAM Role used in this project is **SageMakerExecutionRole**, which grants the necessary permissions to interact with various AWS services, specifically Amazon SageMaker and Amazon S3.
+
+**Role Overview:**
+
+- **Role Name:** `SageMakerExecutionRole`
+
+- **Purpose:** This role allows the SageMaker service to execute machine learning workflows such as training, inference, and data processing.
+
+**Permissions:**
+
+- **Amazon SageMaker Full Access:** Grants SageMaker the ability to create, run, and manage ML models and pipelines.
+
+- **Amazon S3 Full Access:** Provides full access to read and write data in Amazon S3 buckets, which is required for storing datasets, model artifacts, and inference results.
+
+- **Additional Permissions:** The role may also include permissions for logging and monitoring, such as CloudWatch access, to track and troubleshoot pipeline executions.
+
+**Role ARN:**
+
+This role is associated with the ARN:
+
+`arn:aws:iam::029937870282:role/SageMakerExecutionRole`
+
+**Best Practices:**
+
+- **Least Privilege Principle:** The permissions granted to this role should adhere to the least privilege principle, ensuring that only the necessary access is provided.
+
+- **Secure Access:** The role should be restricted to only those who need it and regularly audited for security compliance.
+
+- **Scoped Permissions:** In production environments, it is recommended to scope the permissions further if possible (e.g., limiting the access to specific S3 buckets).
+
+**Usage:**
+
+This IAM role is used by the SageMaker pipelines during training and inference. Specifically, it allows SageMaker to:
+
+- Access training data from S3
+
+- Save model artifacts and predictions to S3
+
+- Run processing steps (e.g., preprocessing, feature engineering) on specified instances
+
+By using this IAM role, we ensure that our SageMaker workflows have the required permissions to interact with AWS resources securely and efficiently.
+
+---
+
 ## Models & Metrics 🎯
-- Models trained: Linear, Ridge, Lasso, RandomForest, GradientBoosting (configurable) ✅
-- Selected metric: **RMSE** (set in `config/config.yaml`) — RMSE is suitable for measuring average prediction error in units of the target (seconds) and penalizes larger errors.
-- The best model is selected based on the configured metric and optionally registered with MLflow model registry.
+- **Models trained:** Linear, Ridge, Lasso, RandomForest, GradientBoosting (configurable)
+- **Selected metric:** **RMSE** (set in `config/config.yaml`) — RMSE measures average error in seconds and penalizes large errors.
+- **Model selection:** The best model is selected based on the configured metric and can be optionally registered in MLflow model registry.
 
 ---
 
@@ -122,20 +308,36 @@ uv run pytest
 pytest -q
 ```
 
-Unit tests cover preprocess, feature engineering, the trainer, inference pipeline and CLI smoke tests.
+**Test coverage:**
+- Preprocessing & feature engineering
+- Trainer & model selection
+- Inference pipeline
+- CLI smoke tests
+
+**Tips:** Use markers for slow/integration tests and exclude them in CI if they require cloud access.
 
 ---
 
-## What to improve / future work 💡
-- Add a minimal GitHub Actions CI workflow to run a fast test matrix & lint on PRs (optional).
-- Add more robust integration tests for the SageMaker pipelines (requires AWS credentials).
-- Add end-to-end checks for `uv run train` and `uv run inference` across Docker and local setups.
+## Scripts & Files 🔧
+- `run_training_pipeline.py` — SageMaker training pipeline wrapper
+- `run_batch_inference_pipeline.py` — SageMaker batch inference wrapper
+- `run.py` — convenience entrypoint for local pipeline runs
+- `scripts/preprocess.py`, `scripts/feature_engineering.py`, `scripts/train.py`, `scripts/batch_inference.py` — stage scripts
+- `src/ml_project/` — core package (models, features, preprocessing, pipeline orchestration)
+- `config/config.yaml` — central configuration
 
 ---
 
-## Team contributions
-- List contributions in the README (commits & PRs) or in the repository under `CONTRIBUTING.md` — update manually with names & roles.
+## Contributing 🤝
+- Fork → feature branch → PR with tests and description.
+- Keep PRs small and focused.
+- Add/update tests for new behaviour.
 
 ---
 
-If you want, I can open a PR that implements the CLI, updates the packaging entry-points (so `uv run train` / `uv run inference` work), and adds the README (done). I can also add a small CI job next.
+## License
+This project is licensed under the MIT License. See `LICENSE` for details.
+
+---
+
+If you'd like, I can open a PR with this README + placeholder graphic, add a CI job that runs `pytest` on every PR, or generate a few example graphics/screenshots from the MLflow UI for the README. Which would you prefer next?
