@@ -9,11 +9,6 @@ A complete end-to-end MLOps project for the New York City Taxi Trip Duration dat
 
 ---
 
-## 🖼️Screenshots / Graphics 
-> Placeholder image above — replace `docs/images/placeholder.svg` with your project graphic or a dashboard screenshot.
-
----
-
 ## 📥Data 
 - Dataset: NYC Taxi Trip Duration (Kaggle) — raw dataset is not committed to the repo.
 - Expected locations:
