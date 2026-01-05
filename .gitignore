@@ -48,3 +48,6 @@ src/ml_project/data/
 
 # ────────────── Docker ──────────────
 docker-volume/
+
+# Local secrets
+.env
