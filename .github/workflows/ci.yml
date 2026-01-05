@@ -22,6 +22,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pandas numpy pytest
 
+      - name: Verify scripts importable
+        run: |
+          python - <<'PY'
+          import scripts
+          import scripts.preprocess
+          print("scripts import OK")
+          PY
+
       - name: Run fast unit tests (scripts + classes)
         run: pytest tests/scripts tests/classes -q --maxfail=1
 
