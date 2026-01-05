@@ -10,3 +10,8 @@ if str(ROOT) not in sys.path:
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
+
+def pytest_configure(config):
+    """Configure pytest markers for better test organization."""
+    config.addinivalue_line("markers", "script: marks functional/script tests")
+    config.addinivalue_line("markers", "class: marks class-based tests")
