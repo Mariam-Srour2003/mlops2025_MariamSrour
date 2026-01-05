@@ -21,14 +21,15 @@ dependencies = [
     "googleapis-common-protos==1.60.0",
     "setuptools>=80.9.0",
     "wheel>=0.45.1",
+    "sagemaker==2.80.0"
 ]
 
 
 
 [project.scripts]
 ml-project = "ml_project:main"
-train = "mlproject.pipelines.run_training:main"
-inference = "mlproject.pipelines.run_batch_inference:main"
+train = "ml_project.cli:train"
+inference = "ml_project.cli:inference"
 
 [build-system]
 requires = ["uv_build>=0.8.17,<0.9.0"]
