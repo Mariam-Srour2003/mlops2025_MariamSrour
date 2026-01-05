@@ -22,8 +22,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pandas numpy pytest
 
-      - name: Run fast unit test (preprocess)
-        run: pytest tests/scripts/test_preprocess.py -q --maxfail=1
+      - name: Run fast unit tests (scripts + classes)
+        run: pytest tests/scripts tests/classes -q --maxfail=1
 
       - name: Run a tiny preprocessing sample (optional quick smoke)
         run: |
