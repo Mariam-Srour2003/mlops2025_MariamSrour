@@ -285,6 +285,18 @@ uv run pytest
 pytest -q
 ```
 
+**Run a single test file**
+```bash
+pytest tests/classes/test_preprocess_class.py -q
+# or (pass args through uv):
+uv run pytest -- tests/classes/test_preprocess_class.py -q
+```
+
+**Run a single test function (node id)**
+```bash
+pytest tests/classes/test_preprocess_class.py::test_handle_missing_values -q
+```
+
 **Test coverage:**
 - Preprocessing & feature engineering
 - Trainer & model selection
@@ -302,18 +314,6 @@ pytest -q
 - `scripts/preprocess.py`, `scripts/feature_engineering.py`, `scripts/train.py`, `scripts/batch_inference.py` — stage scripts
 - `src/ml_project/` — core package (models, features, preprocessing, pipeline orchestration)
 - `config/config.yaml` — central configuration
-
----
-
-## 🤝Contributing 
-- Fork → feature branch → PR with tests and description.
-- Keep PRs small and focused.
-- Add/update tests for new behaviour.
-
----
-
-## License
-This project is licensed under the MIT License. See `LICENSE` for details.
 
 ---
 
